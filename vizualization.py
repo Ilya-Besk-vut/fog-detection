@@ -16,8 +16,6 @@ print("NET LOADED")
 
 TARGET_NAMES = ["Clear", "Cloudy", "Fog"]
 
-cap = cv2.VideoCapture(0)
-
 FolderPath = BASE_DIR / '20251130_C'
 ImPath = list(FolderPath.glob('*png'))
 Image = cv2.imread(str(ImPath[1625]))
