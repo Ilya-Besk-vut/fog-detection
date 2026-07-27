@@ -1,0 +1,17 @@
+experiment_name: "exp_01_baseline"
+
+data:
+  dataset_path: "data/my_dataset.npz"
+  img_size: [32, 32]
+  batch_size: 40
+  val_split: 0.15
+  random_state: 42
+
+model:
+  name: "custom_cnn"
+  num_classes: 3
+
+training:
+  epochs: 30
+  learning_rate: 0.001
+  save_path: "saved_models/best_model.keras"
