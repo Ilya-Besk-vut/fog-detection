@@ -1,5 +1,7 @@
 .venv/
 __pycache__/
-my_dataset.npz
+data/
+*.npz
+saved_models/
 *.keras
 *.h5
