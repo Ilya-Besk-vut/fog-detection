@@ -5,9 +5,7 @@ from keras.layers import (
 )
 
 def build_model(input_shape=(32, 32, 3), num_classes=3):
-    """
-    Создает и возвращает модель CNN для классификации дорожных знаков.
-    """
+    
     model = Sequential()
     chanDim = -1
 

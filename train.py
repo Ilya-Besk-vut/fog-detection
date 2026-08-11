@@ -1,66 +1,80 @@
+# train.py
+import argparse
+import os
+import random
 import numpy as np
-from pathlib import Path
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report
+import tensorflow as tf
+import yaml
 
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from keras.optimizers import Adam
-from keras.callbacks import ModelCheckpoint
+from src.models import get_model
+from src.preprocessing import load_data
 
-from model_conf import build_model
 
-# --- 1. Гиперпараметры и пути ---
-NUM_EPOCHS = 30
-INIT_LR = 1e-3
-BS = 40
-data = np.load('my_dataset.npz')['features']
-labels = np.load('my_dataset.npz')['targets']
-BASE_DIR = Path('../')
+# function for fixing random state
+def set_seed(seed: int):
+    random.seed(seed)
+    np.random.seed(seed)
+    tf.random.set_seed(seed)
 
-TARGET_NAMES = ["Clear", "Cloudy", "Fog"]
 
-(trainX, testX, trainY, testY) = train_test_split(
-    data, labels, test_size=0.15, random_state=42
-)
+def main(config_path: str):
+    # Loading configurqtion from yaml 
+    with open(config_path, 'r', encoding='utf-8') as f:
+        config = yaml.safe_load(f)
 
-# --- Инициализация и компиляция модели ---
-model = build_model(input_shape=(32, 32, 3), num_classes=len(TARGET_NAMES))
+    print(f"Strart {config['experiment_name']}")
 
-opt = Adam(learning_rate=INIT_LR)
-model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
-model.summary()
+    # fix random state (from yaml)
+    seed = config['data'].get('random_state', 42)
+    set_seed(seed)
 
-# --- 4. Аугментация и обучение ---
-aug = ImageDataGenerator(
-    rotation_range=5,
-    zoom_range=0.05,
-    width_shift_range=0.05,
-    height_shift_range=0.05,
-    shear_range=0.10,
-    fill_mode="nearest"
-)
+    #  reading .npz file
+    X_train, X_val, y_train, y_val = load_data(
+        npz_path=config['data']['dataset_path'],
+        val_split=config['data']['val_split'],
+        random_state=seed,
+    )
 
-checkpointer = ModelCheckpoint(
-    filepath=BASE_DIR / 'best_model.keras', 
-    verbose=1, 
-    save_best_only=True
-)
+    #  model initialization
+    img_size = config['data']['img_size']
+    input_shape = (img_size[0], img_size[1], 3)
+    num_classes = config['model']['num_classes']
 
-print("[INFO] training network...")
-H = model.fit(
-    aug.flow(trainX, trainY, batch_size=BS),
-    validation_data=(testX, testY),
-    steps_per_epoch=len(trainX) // BS,
-    epochs=NUM_EPOCHS,
-    shuffle=True,
-    callbacks=[checkpointer]
-)
+    model = get_model(
+        model_name=config['model']['name'],
+        input_shape=input_shape,
+        num_classes=num_classes,
+    )
 
-# --- 5. Оценка результатов ---
-print("[INFO] evaluating network...")
-predictions = model.predict(testX, batch_size=BS)
-print(classification_report(
-    testY.argmax(axis=1),
-    predictions.argmax(axis=1), 
-    target_names=TARGET_NAMES
-))
+    optimizer = tf.keras.optimizers.Adam(
+        learning_rate=config['training']['learning_rate']
+    )
+    model.compile(
+        optimizer=optimizer,
+        loss='categorical_crossentropy',
+        metrics=['accuracy'],
+    )
+
+    # Training
+    print('Training')
+    model.fit(
+        X_train,
+        y_train,
+        validation_data=(X_val, y_val),
+        epochs=config['training']['epochs'],
+        batch_size=config['data']['batch_size'],
+    )
+
+    # saving the trainded model 
+    save_path = config['training']['save_path']
+    
+    model.save(save_path)
+    print(f"Model saved '{save_path}'")
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', type=str, default='configs/baseline.yaml')
+    args = parser.parse_args()
+
+    main(args.config)

@@ -14,4 +14,4 @@ model:
 training:
   epochs: 30
   learning_rate: 0.001
-  save_path: "saved_models/best_model.keras"
+  save_path: "saved_models/best_model_exp_01_.keras"

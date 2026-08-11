@@ -1,6 +1,7 @@
 from pathlib import Path
 import cv2
 import numpy as np
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer
 import numpy as np
 import random
@@ -17,40 +18,56 @@ CATEGORIES = {
     '20251106_Cebin_jasno': 'clear'
 }
 
-BASE_DIR = Path('../')
-MAX_IMAGES_PER_CLASS = 4000
-IMAGE_SIZE = (32, 32)
-
-data = []
-labels = []
-
-samples = []
-
-for FolderName, LabelName in CATEGORIES.items():
-    FolderPath = BASE_DIR / FolderName
-    CurrentImagePath = list(FolderPath.glob('*.png'))[:MAX_IMAGES_PER_CLASS:10]
-    for path in CurrentImagePath:
-        samples.append((path, LabelName))
+def build_npz_dataset(
+    base_dir='../',
+    output_path='data/my_dataset.npz',
+    IMAGE_SIZE=(32, 32),
+    MAX_IMAGES_PER_CLASS=4000):
     
-random.seed(42)
-random.shuffle(samples)
+    BASE_DIR = Path(base_dir)
 
-for path, label in samples:
+    data = []
+    labels = []
+    samples = []
+
+    for FolderName, LabelName in CATEGORIES.items():
+        FolderPath = BASE_DIR / FolderName
+        CurrentImagePath = list(FolderPath.glob('*.png'))[:MAX_IMAGES_PER_CLASS:10]
+        for path in CurrentImagePath:
+            samples.append((path, LabelName))
+        
+    random.seed(42)
+    random.shuffle(samples)
+
+    for path, label in samples:
+        
+        image = cv2.imread(str(path))
+        image = cv2.resize(image, IMAGE_SIZE)
+        data.append(image)
+
+        labels.append(label)
+
+    data = np.array(data, dtype="float32") / 255.0
     
-    image = cv2.imread(str(path))
-    image = cv2.resize(image, IMAGE_SIZE)
-    data.append(image)
+    lb = LabelBinarizer()
+    labels = lb.fit_transform(labels)
+        
+    print(len(data))
 
-    labels.append(label)
+    print(len(labels))
 
-data = np.array(data, dtype="float32") / 255.0
- 
-lb = LabelBinarizer()
-labels = lb.fit_transform(labels)
+    np.savez(output_path, features=data, targets=labels)
+    print(f'data saved to {output_path}')
     
-print(len(data))
+def load_data(npz_path='data/my_dataset.npz',
+              val_split=0.15, random_state=42):
+    dataset = np.load(npz_path)
+    
+    X = dataset['features']
+    Y = dataset['targets']
+    
+    X_train, X_val, y_train, y_val = train_test_split(X, Y, test_size=val_split, random_state=random_state, shuffle=True)
+    return X_train, X_val, y_train, y_val
 
-print(len(labels))
-
-np.savez('my_dataset.npz', features=data, targets=labels)
-print('data saved to my_dataset.npz')
+if __name__ == '__main__':
+    build_npz_dataset()

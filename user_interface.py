@@ -6,7 +6,8 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 
 MODELS_DICT = {
-    "Model 1": "../best_model.keras"
+    "Model 1": "../best_model.keras",
+    "Model 2": "saved_models/best_model_exp_01_.keras"
 }
 
 LOADED_MODELS = {}
@@ -38,6 +39,7 @@ def predict_fog(image, model_name):
     for i in range(len(CLASS_NAMES)):
         result [CLASS_NAMES[i]] = float(predictions[i])
     return result
+
 
 
 def shutdown():
