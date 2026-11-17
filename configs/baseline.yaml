@@ -3,6 +3,7 @@ experiment_name: "exp_01_baseline"
 data:
   dataset_path: "data/my_dataset.npz"
   img_size: [32, 32]
+  channels: 3
   batch_size: 40
   val_split: 0.15
   random_state: 42

@@ -1,0 +1,20 @@
+experiment_name: "exp_02_dcp_4channel_map"
+
+data:
+  dataset_path: "data/dataset_dcp_map.npz"
+  data_type: "single_tensor"
+  img_size: [32, 32]
+  channels: 4                
+  batch_size: 40
+  val_split: 0.15
+  random_state: 42
+
+model:
+  name: "custom_cnn"
+  num_classes: 3
+
+training:
+  optimizer: "adam"
+  learning_rate: 0.001
+  epochs: 30
+  save_path: "saved_models/best_model_exp_02_dcp_map.keras"

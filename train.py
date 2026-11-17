@@ -37,7 +37,7 @@ def main(config_path: str):
 
     #  model initialization
     img_size = config['data']['img_size']
-    input_shape = (img_size[0], img_size[1], 3)
+    input_shape = (img_size[0], img_size[1], config['data']['channels'])
     num_classes = config['model']['num_classes']
 
     model = get_model(
